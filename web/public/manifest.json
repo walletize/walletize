@@ -1,0 +1,16 @@
+{
+  "name": "Walletize: Simplify Your Money",
+  "short_name": "Walletize",
+  "icons": [
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#4ed48f",
+  "background_color": "#000000",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait"
+}

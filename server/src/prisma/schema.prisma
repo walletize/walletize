@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["typedSql"]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("sessions")
+}
+
+model User {
+  id                     String                  @id @default(uuid())
+  name                   String
+  email                  String                  @unique
+  passwordHash           String?                 @map("password_hash")
+  mainCurrencyId         String                  @default("b6ecaefd-510d-47cf-83a1-b96494496a84") @map("main_currency_id")
+  mainCurrency           Currency                @relation(fields: [mainCurrencyId], references: [id], onDelete: Cascade)
+  sessions               Session[]
+  financialAccounts      FinancialAccount[]
+  accountCategories      AccountCategory[]
+  transactionCategories  TransactionCategory[]
+  accountInvites         AccountInvite[]
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  Transaction            Transaction[]
+
+  @@map("users")
+}
+
+model FinancialAccount {
+  id              String          @id @default(uuid())
+  name            String
+  userId          String          @map("user_id")
+  categoryId      String          @map("category_id")
+  currencyId      String          @map("currency_id")
+  initialValue    BigInt          @map("initial_value")
+  icon            String
+  color           String
+  iconColor       String          @map("icon_color")
+  transactions    Transaction[]
+  accountInvites  AccountInvite[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountCategory AccountCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  currency        Currency        @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@map("financial_accounts")
+}
+
+model AccountType {
+  id                String            @id @default(uuid())
+  name              String
+  accountCategories AccountCategory[]
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  @@map("account_types")
+}
+
+model AccountCategory {
+  id                String             @id @default(uuid())
+  name              String
+  typeId            String             @map("type_id")
+  userId            String?            @map("user_id")
+  financialAccounts FinancialAccount[]
+  accountType       AccountType        @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@map("account_categories")
+}
+
+model AccountInvite {
+  id               String           @id @default(uuid())
+  status           InviteStatus     @map("status")
+  email            String           @map("email")
+  userId           String?          @map("user_id")
+  accountId        String           @map("account_id")
+  user             User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialAccount FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@map("account_invites")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Transaction {
+  id                             String               @id @default(uuid())
+  description                    String?
+  date                           DateTime
+  amount                         BigInt
+  rate                           Float?
+  accountId                      String               @map("account_id")
+  userId                         String               @map("user_id")
+  categoryId                     String               @map("category_id")
+  currencyId                     String               @map("currency_id")
+  recurrenceId                   String?              @map("recurrence_id")
+  user                           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialAccount               FinancialAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactionCategory            TransactionCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  currency                       Currency             @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  createdAt                      DateTime             @default(now()) @map("created_at")
+  updatedAt                      DateTime             @updatedAt @map("updated_at")
+  originTransactionTransfer      TransactionTransfer? @relation("originTransaction")
+  destinationTransactionTransfer TransactionTransfer? @relation("destinationTransaction")
+
+  @@map("transactions")
+}
+
+model TransactionType {
+  id                    String                @id @default(uuid())
+  name                  String
+  transactionCategories TransactionCategory[]
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  @@map("transaction_types")
+}
+
+model TransactionCategory {
+  id              String          @id @default(uuid())
+  name            String
+  typeId          String          @map("type_id")
+  userId          String?         @map("user_id")
+  icon            String
+  color           String
+  iconColor       String          @map("icon_color")
+  transactions    Transaction[]
+  transactionType TransactionType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  user            User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@map("transaction_categories")
+}
+
+model TransactionTransfer {
+  id                       String       @id @default(uuid())
+  originTransactionId      String?      @unique @map("origin_transaction_id")
+  destinationTransactionId String?      @unique @map("destination_transaction_id")
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+  originTransaction        Transaction? @relation("originTransaction", fields: [originTransactionId], references: [id], onDelete: Cascade)
+  destinationTransaction   Transaction? @relation("destinationTransaction", fields: [destinationTransactionId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_transfers")
+}
+
+model Currency {
+  id           String             @id @default(uuid())
+  code         String             @unique
+  name         String
+  symbol       String
+  rate         Float
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  accounts     FinancialAccount[]
+  transactions Transaction[]
+  users        User[]
+
+  @@map("currencies")
+}

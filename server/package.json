@@ -1,0 +1,71 @@
+{
+  "name": "walletize-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend server for Walletize",
+  "author": "Justin Jap",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@8.14.3",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/app.ts NODE_ENV=development",
+    "build": "pnpm exec tsc",
+    "start": "node dist/app.js",
+    "prepare": "husky",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "migrate:reset": "pnpm exec prisma migrate reset",
+    "seed": "pnpm exec prisma db seed"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "prisma": {
+    "schema": "src/prisma/schema.prisma",
+    "seed": "pnpm exec tsx src/prisma/seeders/seed.ts"
+  },
+  "dependencies": {
+    "@lucia-auth/adapter-prisma": "^4.0.1",
+    "@node-rs/argon2": "^1.8.3",
+    "@prisma/client": "^6.1.0",
+    "cors": "^2.8.5",
+    "eslint": "^9.11.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "express": "^4.19.2",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "lucia": "^3.2.0",
+    "node-cron": "^3.0.3",
+    "oslo": "^1.2.1",
+    "react": "^18.3.1",
+    "rrule": "^2.8.1",
+    "uuid": "^10.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1.1.1",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^18.3.3",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.3.3",
+    "prisma": "^6.1.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.5"
+  }
+}
