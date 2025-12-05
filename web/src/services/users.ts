@@ -1,5 +1,7 @@
+import { getApiUrl } from "@/lib/api";
+
 export async function updateMainCurrency(currencyId: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/users/currency/${currencyId}`, {
+  const res = await fetch(getApiUrl() + `/users/currency/${currencyId}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -13,7 +15,7 @@ export async function updateMainCurrency(currencyId: string) {
 }
 
 export async function updateUser(name: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/users', {
+  const res = await fetch(getApiUrl() + '/users', {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -30,7 +32,7 @@ export async function updateUser(name: string) {
 }
 
 export async function deleteUser() {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/users', {
+  const res = await fetch(getApiUrl() + '/users', {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -44,7 +46,7 @@ export async function deleteUser() {
 }
 
 export async function updatePassword(currentPassword: string, newPassword: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/users/password', {
+  const res = await fetch(getApiUrl() + '/users/password', {
     method: 'PUT',
     credentials: 'include',
     headers: {

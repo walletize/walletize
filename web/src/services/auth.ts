@@ -1,5 +1,7 @@
+import { getApiUrl } from "@/lib/api";
+
 export async function signUp(name: string, email: string, password: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/signup', {
+  const res = await fetch(getApiUrl() + '/auth/signup', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -18,7 +20,7 @@ export async function signUp(name: string, email: string, password: string) {
 }
 
 export async function logIn(email: string, password: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/login', {
+  const res = await fetch(getApiUrl() + '/auth/login', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -36,7 +38,7 @@ export async function logIn(email: string, password: string) {
 }
 
 export async function logOut() {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/logout', {
+  const res = await fetch(getApiUrl() + '/auth/logout', {
     method: 'POST',
     credentials: 'include',
     headers: {

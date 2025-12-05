@@ -1,11 +1,12 @@
 'use server';
 
+import { getApiUrl } from '@/lib/api';
 import { User } from '@/types/User';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
 
 export const validateSession = cache(async () => {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/session/validate', {
+  const res = await fetch(getApiUrl() + '/auth/session/validate', {
     method: 'GET',
     credentials: 'include',
     headers: {

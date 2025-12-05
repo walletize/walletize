@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: walletize-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: walletize
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - walletize-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: walletize-server
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/walletize"
+      EXCHANGE_RATE_API_KEY: "${EXCHANGE_RATE_API_KEY:-your-exchangerate-api-key}"
+      WEB_URL: "${WEB_URL:-http://localhost:3101}"
+      USE_HTTPS: "${USE_HTTPS:-false}"
+      NODE_ENV: "production"
+      PORT: "3100"
+    ports:
+      - "3100:3100"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - walletize-network
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: walletize-web
+    environment:
+      NEXT_PUBLIC_WEB_URL: "${NEXT_PUBLIC_WEB_URL:-http://localhost:3101}"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:3100}"
+      INTERNAL_API_URL: "${INTERNAL_API_URL:-http://server:3100}"
+      DISABLE_SIGNUP: "${DISABLE_SIGNUP:-false}"
+    ports:
+      - "3101:3101"
+    depends_on:
+      - server
+    networks:
+      - walletize-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  walletize-network:
+    driver: bridge

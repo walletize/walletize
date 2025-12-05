@@ -5,6 +5,7 @@ import { Transaction } from '@/types/Transaction';
 import { TransactionCategory } from '@/types/TransactionCategory';
 import { TransactionTransfer } from '@/types/TransactionTransfer';
 import { TransactionType } from '@/types/TransactionType';
+import { getApiUrl } from '@/lib/api';
 
 export async function addTransaction(
   formData: FormData,
@@ -33,7 +34,7 @@ export async function addTransaction(
     rate = Math.floor((parseFloat(cleanQuoteRate) / parseFloat(cleanBaseRate)) * 1e8) / 1e8;
   }
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions', {
+  const res = await fetch(getApiUrl() + '/transactions', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -88,7 +89,7 @@ export async function addTransferTransaction(
     rate = Math.floor((parseFloat(cleanQuoteRate) / parseFloat(cleanBaseRate)) * 1e8) / 1e8;
   }
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/transfer', {
+  const res = await fetch(getApiUrl() + '/transactions/transfer', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -136,7 +137,7 @@ export async function addUpdateTransaction(
     rate = Math.floor((parseFloat(cleanQuoteRate) / parseFloat(cleanBaseRate)) * 1e8) / 1e8;
   }
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/update', {
+  const res = await fetch(getApiUrl() + '/transactions/update', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -187,7 +188,7 @@ export async function updateTransaction(
     rate = Math.floor((parseFloat(cleanQuoteRate) / parseFloat(cleanBaseRate)) * 1e8) / 1e8;
   }
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/' + transactionId, {
+  const res = await fetch(getApiUrl() + '/transactions/' + transactionId, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -210,7 +211,7 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(transaction: Transaction, recurringDeleteType?: string | null) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/' + transaction.id, {
+  const res = await fetch(getApiUrl() + '/transactions/' + transaction.id, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -235,7 +236,7 @@ export async function addTransactionCategory(
 ) {
   const name = formData.get('name') as string;
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/categories', {
+  const res = await fetch(getApiUrl() + '/transactions/categories', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -265,7 +266,7 @@ export async function updateTransactionCategory(
 ) {
   const name = formData.get('name') as string;
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/categories/' + id, {
+  const res = await fetch(getApiUrl() + '/transactions/categories/' + id, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -286,7 +287,7 @@ export async function updateTransactionCategory(
 }
 
 export async function deleteTransactionCategory(id: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/transactions/categories/' + id, {
+  const res = await fetch(getApiUrl() + '/transactions/categories/' + id, {
     method: 'DELETE',
     credentials: 'include',
     headers: {

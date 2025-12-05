@@ -1,12 +1,13 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { getApiUrl } from '@/lib/api';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export const fetcher = (url: string) =>
-  fetch(process.env.NEXT_PUBLIC_API_URL + url, {
+  fetch(getApiUrl() + url, {
     method: 'GET',
     credentials: 'include',
     headers: {

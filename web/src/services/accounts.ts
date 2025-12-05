@@ -4,6 +4,7 @@ import { AccountInvite } from '@/types/AccountInvite';
 import { Currency } from '@/types/Currency';
 import { FinancialAccount } from '@/types/FinancialAccount';
 import { User } from '@/types/User';
+import { getApiUrl } from '@/lib/api';
 
 export async function addFinancialAccount(
   formData: FormData,
@@ -22,7 +23,7 @@ export async function addFinancialAccount(
     parsedInitialValue = parseCurrencyInput(initialValue);
   }
 
-  await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts', {
+  await fetch(getApiUrl() + '/accounts', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -48,7 +49,7 @@ export async function addFinancialAccount(
 export async function addFinancialAccountCategory(formData: FormData, typeId?: string) {
   const name = formData.get('name') as string;
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/categories', {
+  const res = await fetch(getApiUrl() + '/accounts/categories', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -68,7 +69,7 @@ export async function addFinancialAccountCategory(formData: FormData, typeId?: s
 export async function updateFinancialAccountCategory(id: string, formData: FormData, typeId: string) {
   const name = formData.get('name') as string;
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/categories/' + id, {
+  const res = await fetch(getApiUrl() + '/accounts/categories/' + id, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -86,7 +87,7 @@ export async function updateFinancialAccountCategory(id: string, formData: FormD
 }
 
 export async function deleteFinancialAccountCategory(id: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/categories/' + id, {
+  const res = await fetch(getApiUrl() + '/accounts/categories/' + id, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -100,7 +101,7 @@ export async function deleteFinancialAccountCategory(id: string) {
 }
 
 export async function deleteFinancialAccount(account: FinancialAccount) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/' + account.id, {
+  const res = await fetch(getApiUrl() + '/accounts/' + account.id, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -130,7 +131,7 @@ export async function updateFinancialAccount(
     parsedInitialValue = parseCurrencyInput(initialValue);
   }
 
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/' + account.id, {
+  const res = await fetch(getApiUrl() + '/accounts/' + account.id, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -154,7 +155,7 @@ export async function updateFinancialAccount(
 }
 
 export async function sendAccountInvite(email: string, accountId: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/invites', {
+  const res = await fetch(getApiUrl() + '/accounts/invites', {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -169,7 +170,7 @@ export async function sendAccountInvite(email: string, accountId: string) {
 }
 
 export async function deleteAccountInvite(accountInviteId: string) {
-  const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/invites/' + accountInviteId, {
+  const res = await fetch(getApiUrl() + '/accounts/invites/' + accountInviteId, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -183,7 +184,7 @@ export async function deleteAccountInvite(accountInviteId: string) {
 }
 
 export async function acceptAccountInvite(inviteId: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/invites/${inviteId}/accept`, {
+  const res = await fetch(`${getApiUrl()}/accounts/invites/${inviteId}/accept`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -197,7 +198,7 @@ export async function acceptAccountInvite(inviteId: string) {
 }
 
 export async function declineAccountInvite(inviteId: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/invites/${inviteId}/decline`, {
+  const res = await fetch(`${getApiUrl()}/accounts/invites/${inviteId}/decline`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -211,7 +212,7 @@ export async function declineAccountInvite(inviteId: string) {
 }
 
 export async function leaveAccount(accountId: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/invites/${accountId}/leave`, {
+  const res = await fetch(`${getApiUrl()}/accounts/invites/${accountId}/leave`, {
     method: 'POST',
     credentials: 'include',
     headers: {

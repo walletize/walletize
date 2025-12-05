@@ -15,7 +15,7 @@ import {
   getTransactionsStartEndDateByAccount,
   getTransactionsStartEndDateByUser,
   getTransactionsSumByCategory,
-} from '@prisma/client/sql.js';
+} from '../prisma/queries.js';
 import express from 'express';
 import { User } from 'lucia';
 import pkg from 'rrule';
@@ -345,8 +345,8 @@ router.post('/update', validateData(createUpdateTransactionSchema), async (req, 
       return res.status(403).json({ message: 'forbidden' });
     }
 
-    const result = await prisma.$queryRawTyped(getAccountValue(accountId));
-    const sum = BigInt(Math.round(result[0].sum ?? 0));
+    const result = await prisma.$queryRaw<{ sum: number | bigint | null }[]>(getAccountValue(accountId));
+    const sum = BigInt(Math.round(Number(result[0].sum ?? 0)));
 
     await prisma.transaction.create({
       data: {
@@ -465,12 +465,14 @@ router.get('/account/:accountId', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const transactionsStartEndDate = await prisma.$queryRawTyped(getTransactionsStartEndDateByAccount(accountId));
+    const transactionsStartEndDate = await prisma.$queryRaw<{ max: Date | null; min: Date | null }[]>(
+      getTransactionsStartEndDateByAccount(accountId),
+    );
     const transactionsStartDate = transactionsStartEndDate[0].min || new Date();
     transactionsStartDate.setDate(transactionsStartDate.getDate() - 1);
     const transactionsEndDate = transactionsStartEndDate[0].max || new Date();
 
-    const rawGroupedTransactions = await prisma.$queryRawTyped(
+    const rawGroupedTransactions = await prisma.$queryRaw<RawGroupedTransaction[]>(
       getGroupedTransactionsByAccount(
         accountId,
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
@@ -482,7 +484,7 @@ router.get('/account/:accountId', async (req, res) => {
       JSON.stringify(rawGroupedTransactions, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );
 
-    const rawGroupedTransactionsCount = await prisma.$queryRawTyped(
+    const rawGroupedTransactionsCount = await prisma.$queryRaw<{ count: number | bigint }[]>(
       getTransactionsCountByAccount(
         accountId,
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
@@ -495,12 +497,12 @@ router.get('/account/:accountId', async (req, res) => {
     let prevIncome = 0;
     let prevExpenses = 0;
     if (previousPeriod) {
-      const rawPrevValue: { prevValue: number | null }[] = await prisma.$queryRawTyped(
+      const rawPrevValue = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevAccountValue(accountId, new Date(previousPeriod.endDate)),
       );
       prevValue = (rawPrevValue[0].prevValue || 0) + Number(account.initialValue);
 
-      const rawPrevIncome = await prisma.$queryRawTyped(
+      const rawPrevIncome = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevTransactionsValueByAccount(
           accountId,
           new Date(previousPeriod.startDate),
@@ -510,7 +512,7 @@ router.get('/account/:accountId', async (req, res) => {
       );
       prevIncome = rawPrevIncome[0].prevValue || 0;
 
-      const rawPrevExpenses = await prisma.$queryRawTyped(
+      const rawPrevExpenses = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevTransactionsValueByAccount(
           accountId,
           new Date(previousPeriod.startDate),
@@ -521,7 +523,7 @@ router.get('/account/:accountId', async (req, res) => {
       prevExpenses = rawPrevExpenses[0].prevValue || 0;
     }
 
-    const chartData = await prisma.$queryRawTyped(
+    const chartData = await prisma.$queryRaw(
       getChartDataByAccount(
         isRanged ? new Date(startDateStr) : transactionsStartDate,
         isRanged ? new Date(endDateStr) : transactionsEndDate,
@@ -576,12 +578,14 @@ router.get('/user/:userId', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const transactionsStartEndDate = await prisma.$queryRawTyped(getTransactionsStartEndDateByUser(userId));
+    const transactionsStartEndDate = await prisma.$queryRaw<{ max: Date | null; min: Date | null }[]>(
+      getTransactionsStartEndDateByUser(userId),
+    );
     const transactionsStartDate = transactionsStartEndDate[0].min || new Date();
     transactionsStartDate.setDate(transactionsStartDate.getDate() - 1);
     const transactionsEndDate = transactionsStartEndDate[0].max || new Date();
 
-    const rawGroupedTransactions = await prisma.$queryRawTyped(
+    const rawGroupedTransactions = await prisma.$queryRaw<RawGroupedTransaction[]>(
       getGroupedTransactionsByUser(
         userId,
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
@@ -593,7 +597,7 @@ router.get('/user/:userId', async (req, res) => {
       JSON.stringify(rawGroupedTransactions, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );
 
-    const rawGroupedTransactionsCount = await prisma.$queryRawTyped(
+    const rawGroupedTransactionsCount = await prisma.$queryRaw<{ count: number | bigint }[]>(
       getTransactionsCountByUser(
         userId,
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
@@ -602,9 +606,11 @@ router.get('/user/:userId', async (req, res) => {
     );
     const groupedTransactionsCount = Number(rawGroupedTransactionsCount[0].count);
 
-    const rawTotalAssetsInitialValue = await prisma.$queryRawTyped(getTotalAccountsInitialValue(userId, 'Asset'));
+    const rawTotalAssetsInitialValue = await prisma.$queryRaw<{ totalInitialValue: number | null }[]>(
+      getTotalAccountsInitialValue(userId, 'Asset'),
+    );
     const totalAssetsInitialValue = Number(rawTotalAssetsInitialValue[0].totalInitialValue);
-    const rawTotalLiabilitiesInitialValue = await prisma.$queryRawTyped(
+    const rawTotalLiabilitiesInitialValue = await prisma.$queryRaw<{ totalInitialValue: number | null }[]>(
       getTotalAccountsInitialValue(userId, 'Liability'),
     );
     const totalLiabilitiesInitialValue = Number(rawTotalLiabilitiesInitialValue[0].totalInitialValue);
@@ -614,7 +620,7 @@ router.get('/user/:userId', async (req, res) => {
     let prevAssetsValue = totalAssetsInitialValue;
     let prevLiabilitiesValue = totalLiabilitiesInitialValue;
     if (previousPeriod) {
-      const rawPrevIncome = await prisma.$queryRawTyped(
+      const rawPrevIncome = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevTransactionsValueByUser(
           userId,
           new Date(previousPeriod.startDate),
@@ -624,7 +630,7 @@ router.get('/user/:userId', async (req, res) => {
       );
       prevIncome = rawPrevIncome[0].prevValue || 0;
 
-      const rawPrevExpenses = await prisma.$queryRawTyped(
+      const rawPrevExpenses = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevTransactionsValueByUser(
           userId,
           new Date(previousPeriod.startDate),
@@ -634,18 +640,18 @@ router.get('/user/:userId', async (req, res) => {
       );
       prevExpenses = rawPrevExpenses[0].prevValue || 0;
 
-      const rawPrevAssetsValue = await prisma.$queryRawTyped(
+      const rawPrevAssetsValue = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevAccountsValueByType(userId, 'Asset', new Date(previousPeriod.endDate)),
       );
       prevAssetsValue = totalAssetsInitialValue + (rawPrevAssetsValue[0].prevValue || 0);
 
-      const rawPrevLiabilitiesValue = await prisma.$queryRawTyped(
+      const rawPrevLiabilitiesValue = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevAccountsValueByType(userId, 'Liability', new Date(previousPeriod.endDate)),
       );
       prevLiabilitiesValue = totalLiabilitiesInitialValue + (rawPrevLiabilitiesValue[0].prevValue || 0);
     }
 
-    const chartData = await prisma.$queryRawTyped(
+    const chartData = await prisma.$queryRaw(
       getChartDataByUser(
         isRanged ? new Date(startDateStr) : transactionsStartDate,
         isRanged ? new Date(endDateStr) : transactionsEndDate,
@@ -1030,7 +1036,7 @@ router.get('/chart', async (req, res) => {
     const isRanged = startDateStr && startDateStr !== '' && endDateStr && endDateStr !== '';
     const previousPeriod = isRanged ? getPreviousPeriod(startDateStr, endDateStr) : null;
 
-    const incomeSumByCategoryQuery = prisma.$queryRawTyped(
+    const incomeSumByCategoryQuery = prisma.$queryRaw(
       getTransactionsSumByCategory(
         localUser.id,
         'Income',
@@ -1039,7 +1045,7 @@ router.get('/chart', async (req, res) => {
       ),
     );
 
-    const expenseSumByCategoryQuery = prisma.$queryRawTyped(
+    const expenseSumByCategoryQuery = prisma.$queryRaw(
       getTransactionsSumByCategory(
         localUser.id,
         'Expense',

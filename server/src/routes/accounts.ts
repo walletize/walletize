@@ -1,5 +1,4 @@
 import { InviteStatus } from '@prisma/client';
-import { getAccount, getAccounts, getPrevAccountsValue } from '@prisma/client/sql';
 import express from 'express';
 import { User } from 'lucia';
 import { prisma } from '../app.js';
@@ -11,6 +10,7 @@ import {
   createAccountSchema,
   updateAccountSchema,
 } from '../lib/schemas/accounts.js';
+import { getAccount, getAccounts, getPrevAccountsValue } from '../prisma/queries.js';
 
 const router = express.Router();
 
@@ -280,7 +280,7 @@ router.get('/user', async (req, res) => {
     const localUser = res.locals.user as User;
     const startDate = req.query.startDate as string;
 
-    const rawAccounts = await prisma.$queryRawTyped(getAccounts(localUser.id));
+    const rawAccounts = await prisma.$queryRaw(getAccounts(localUser.id));
     const accounts = JSON.parse(
       JSON.stringify(rawAccounts, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );
@@ -288,10 +288,10 @@ router.get('/user', async (req, res) => {
     let prevAssetsValue = 0;
     let prevLiabilitiesValue = 0;
     if (startDate) {
-      const prevAssetsValueQuery = await prisma.$queryRawTyped(
+      const prevAssetsValueQuery = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevAccountsValue('Asset', localUser.id, new Date(startDate)),
       );
-      const prevLiabilitiesValueQuery = await prisma.$queryRawTyped(
+      const prevLiabilitiesValueQuery = await prisma.$queryRaw<{ prevValue: number | null }[]>(
         getPrevAccountsValue('Liability', localUser.id, new Date(startDate)),
       );
 
@@ -363,7 +363,7 @@ router.get('/:accountId', async (req, res) => {
       return res.status(403).json({ message: 'forbidden' });
     }
 
-    const rawAccount = await prisma.$queryRawTyped(getAccount(accountId));
+    const rawAccount = await prisma.$queryRaw<Record<string, unknown>[]>(getAccount(accountId));
     const account = JSON.parse(
       JSON.stringify(rawAccount[0], (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );

@@ -1,10 +1,11 @@
 'use server';
 
+import { getApiUrl } from '@/lib/api';
 import { RawFinancialAccount, FinancialAccount, serializeFinancialAccount } from '@/types/FinancialAccount';
 import { cookies } from 'next/headers';
 
 export async function getFinancialAccount(id: string) {
-  const fetchAccount = await fetch(process.env.NEXT_PUBLIC_API_URL + '/accounts/' + id, {
+  const fetchAccount = await fetch(getApiUrl() + '/accounts/' + id, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
