@@ -8,7 +8,7 @@ const withPWA = nextPWA({
 });
 
 const nextConfig = withPWA({
-  output: 'standalone',
+  ...(process.env.STANDALONE_BUILD === 'true' ? { output: 'standalone' } : {}),
 });
 
 export default nextConfig;

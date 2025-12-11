@@ -96,8 +96,13 @@ export const getChartDataByUser = (
 export const getGroupedTransactionsByAccount = (accountId: string, startDate: Date, endDate: Date, offset: number) =>
   buildSql(queries.getGroupedTransactionsByAccount, [accountId, startDate, endDate, offset]);
 
-export const getGroupedTransactionsByUser = (userId: string, startDate: Date, endDate: Date, offset: number) =>
-  buildSql(queries.getGroupedTransactionsByUser, [userId, startDate, endDate, offset]);
+export const getGroupedTransactionsByUser = (
+  userId: string,
+  startDate: Date,
+  endDate: Date,
+  offset: number,
+  search?: string,
+) => buildSql(queries.getGroupedTransactionsByUser, [userId, startDate, endDate, offset, search || '']);
 
 export const getPrevAccountValue = (accountId: string, endDate: Date) =>
   buildSql(queries.getPrevAccountValue, [accountId, endDate]);
@@ -128,8 +133,8 @@ export const getTotalAccountsInitialValue = (userId: string, type: string) =>
 export const getTransactionsCountByAccount = (accountId: string, startDate: Date, endDate: Date) =>
   buildSql(queries.getTransactionsCountByAccount, [accountId, startDate, endDate]);
 
-export const getTransactionsCountByUser = (userId: string, startDate: Date, endDate: Date) =>
-  buildSql(queries.getTransactionsCountByUser, [userId, startDate, endDate]);
+export const getTransactionsCountByUser = (userId: string, startDate: Date, endDate: Date, search?: string) =>
+  buildSql(queries.getTransactionsCountByUser, [userId, startDate, endDate, search || '']);
 
 export const getTransactionsStartEndDateByAccount = (accountId: string) =>
   buildSql(queries.getTransactionsStartEndDateByAccount, [accountId]);

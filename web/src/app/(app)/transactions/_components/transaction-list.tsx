@@ -20,6 +20,7 @@ interface TransactionListProps {
   currencies: Currency[];
   user: User;
   showMainCurrencyAmount?: boolean;
+  searchTerm?: string;
 }
 
 function TransactionList({
@@ -30,6 +31,7 @@ function TransactionList({
   currencies,
   user,
   showMainCurrencyAmount,
+  searchTerm,
 }: TransactionListProps) {
   const router = useRouter();
 
@@ -70,6 +72,7 @@ function TransactionList({
                       transaction={transaction}
                       user={user}
                       showMainCurrencyAmount={showMainCurrencyAmount}
+                      highlight={searchTerm}
                     ></TransactionRow>
                   </EditTransactionSheet>
                 ))}

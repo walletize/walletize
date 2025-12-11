@@ -5,7 +5,13 @@ import { TransactionCategory } from '@/types/TransactionCategory';
 import { TransactionType } from '@/types/TransactionType';
 import useSWR from 'swr';
 
-export function useTransactionsByUserId(userId: string, startDate?: Date, endDate?: Date, page?: string | undefined) {
+export function useTransactionsByUserId(
+  userId: string,
+  startDate?: Date,
+  endDate?: Date,
+  page?: string | undefined,
+  search?: string,
+) {
   const params = new URLSearchParams();
   if (startDate) {
     params.append('startDate', formatDateToString(startDate));
@@ -15,6 +21,9 @@ export function useTransactionsByUserId(userId: string, startDate?: Date, endDat
   }
   if (page) {
     params.append('page', page);
+  }
+  if (search) {
+    params.append('search', search);
   }
 
   const { data: rawTransactionsRes, mutate } = useSWR<RawTransactionsRes>(

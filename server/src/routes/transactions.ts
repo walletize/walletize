@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { InviteStatus, Prisma } from '@prisma/client';
 import {
   getAccountValue,
   getChartDataByAccount,
@@ -54,7 +54,7 @@ router.post('/', validateData(createTransactionExpenseIncomeSchema), async (req,
     const acceptedInvite = await prisma.accountInvite.findFirst({
       where: {
         userId: localUser.id,
-        status: 'ACCEPTED',
+        status: InviteStatus.ACCEPTED,
         financialAccount: {
           userId: account?.userId,
         },
@@ -215,7 +215,7 @@ router.post('/transfer', validateData(createTransactionTransferSchema), async (r
       const originAcceptedInvite = await prisma.accountInvite.findFirst({
         where: {
           userId: localUser.id,
-          status: 'ACCEPTED',
+          status: InviteStatus.ACCEPTED,
           financialAccount: {
             userId: originAccount?.userId,
           },
@@ -224,7 +224,7 @@ router.post('/transfer', validateData(createTransactionTransferSchema), async (r
       const destinationAcceptedInvite = await prisma.accountInvite.findFirst({
         where: {
           userId: localUser.id,
-          status: 'ACCEPTED',
+          status: InviteStatus.ACCEPTED,
           financialAccount: {
             userId: destinationAccount?.userId,
           },
@@ -279,7 +279,7 @@ router.post('/transfer', validateData(createTransactionTransferSchema), async (r
       const acceptedInvite = await prisma.accountInvite.findFirst({
         where: {
           userId: localUser.id,
-          status: 'ACCEPTED',
+          status: InviteStatus.ACCEPTED,
           financialAccount: {
             userId: account.userId,
           },
@@ -335,7 +335,7 @@ router.post('/update', validateData(createUpdateTransactionSchema), async (req, 
     const acceptedInvite = await prisma.accountInvite.findFirst({
       where: {
         userId: localUser.id,
-        status: 'ACCEPTED',
+        status: InviteStatus.ACCEPTED,
         financialAccount: {
           userId: account?.userId,
         },
@@ -407,7 +407,7 @@ router.get('/categories/:userId/types/:typeId', async (req, res) => {
       const acceptedInvite = await prisma.accountInvite.findFirst({
         where: {
           userId: localUser.id,
-          status: 'ACCEPTED',
+          status: InviteStatus.ACCEPTED,
           financialAccount: {
             userId,
           },
@@ -570,6 +570,7 @@ router.get('/user/:userId', async (req, res) => {
     const startDateStr = req.query.startDate as string | undefined;
     const endDateStr = req.query.endDate as string | undefined;
     const page = req.query.page as string | undefined;
+    const search = (req.query.search as string | undefined) || '';
 
     const isRanged = startDateStr && startDateStr !== '' && endDateStr && endDateStr !== '';
     const previousPeriod = isRanged ? getPreviousPeriod(startDateStr, endDateStr) : null;
@@ -584,6 +585,16 @@ router.get('/user/:userId', async (req, res) => {
     const transactionsStartDate = transactionsStartEndDate[0].min || new Date();
     transactionsStartDate.setDate(transactionsStartDate.getDate() - 1);
     const transactionsEndDate = transactionsStartEndDate[0].max || new Date();
+    const searchFilter =
+      search && search.trim() !== ''
+        ? {
+            OR: [
+              { description: { contains: search, mode: Prisma.QueryMode.insensitive } },
+              { transactionCategory: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+              { financialAccount: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            ],
+          }
+        : undefined;
 
     const rawGroupedTransactions = await prisma.$queryRaw<RawGroupedTransaction[]>(
       getGroupedTransactionsByUser(
@@ -591,6 +602,7 @@ router.get('/user/:userId', async (req, res) => {
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
         previousPeriod && endDateStr ? new Date(endDateStr) : new Date('9999-12-31'),
         page ? (parseInt(page) - 1) * 10 : 0,
+        search,
       ),
     );
     const groupedTransactions: RawGroupedTransaction[] = JSON.parse(
@@ -602,6 +614,7 @@ router.get('/user/:userId', async (req, res) => {
         userId,
         previousPeriod && startDateStr ? new Date(startDateStr) : new Date('1900-01-01'),
         previousPeriod && endDateStr ? new Date(endDateStr) : new Date('9999-12-31'),
+        search,
       ),
     );
     const groupedTransactionsCount = Number(rawGroupedTransactionsCount[0].count);
@@ -668,21 +681,24 @@ router.get('/user/:userId', async (req, res) => {
       ? await prisma.transaction.count({
           where: {
             OR: [{ date: { lt: new Date(startDateStr) } }, { date: { gt: new Date(endDateStr) } }],
-            AND: {
-              OR: [
-                { userId },
-                {
-                  financialAccount: {
-                    accountInvites: {
-                      some: {
-                        userId,
-                        status: 'ACCEPTED',
+            AND: [
+              {
+                OR: [
+                  { userId },
+                  {
+                    financialAccount: {
+                      accountInvites: {
+                        some: {
+                          userId,
+                          status: InviteStatus.ACCEPTED,
+                        },
                       },
                     },
                   },
-                },
-              ],
-            },
+                ],
+              },
+              ...(searchFilter ? [searchFilter] : []),
+            ],
           },
         })
       : 0;
@@ -752,7 +768,7 @@ router.put('/:transactionId', validateData(updateTransactionSchema), async (req,
     const acceptedInvite = await prisma.accountInvite.findFirst({
       where: {
         userId: localUser.id,
-        status: 'ACCEPTED',
+        status: InviteStatus.ACCEPTED,
         financialAccount: {
           userId: account?.userId,
         },
@@ -860,7 +876,7 @@ router.delete('/:transactionId', validateData(deleteTransactionSchema), async (r
     const acceptedInvite = await prisma.accountInvite.findFirst({
       where: {
         userId: localUser.id,
-        status: 'ACCEPTED',
+        status: InviteStatus.ACCEPTED,
         financialAccount: {
           userId: account?.userId,
         },

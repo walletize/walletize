@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { HighlightedText } from '@/components/ui/highlighted-text';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/types/Transaction';
 import { User } from '@/types/User';
@@ -9,9 +10,10 @@ interface TransactionRowProps {
   transaction: Transaction;
   user: User;
   showMainCurrencyAmount?: boolean;
+  highlight?: string;
 }
 
-function TransactionRow({ transaction, user, showMainCurrencyAmount }: TransactionRowProps) {
+function TransactionRow({ transaction, user, showMainCurrencyAmount, highlight }: TransactionRowProps) {
   const mainAmount = showMainCurrencyAmount ? transaction.mainCurrencyAmount : transaction.accountCurrencyAmount;
 
   return (
@@ -37,7 +39,9 @@ function TransactionRow({ transaction, user, showMainCurrencyAmount }: Transacti
         </Avatar>
         <div className="flex items-center gap-3">
           <div>
-            <p>{transaction.transactionCategory.name}</p>
+            <p>
+              <HighlightedText text={transaction.transactionCategory.name} highlight={highlight} />
+            </p>
             {transaction.financialAccount.accountInvites.length > 0 && (
               <p className="text-xs text-muted-foreground">{transaction.user.name}</p>
             )}
@@ -46,7 +50,15 @@ function TransactionRow({ transaction, user, showMainCurrencyAmount }: Transacti
         </div>
       </div>
       <div className="hidden md:block">
-        {transaction.description ? <p>{transaction.description}</p> : !transaction.transactionTransfer ? <p>-</p> : ''}
+        {transaction.description ? (
+          <p>
+            <HighlightedText text={transaction.description} highlight={highlight} />
+          </p>
+        ) : !transaction.transactionTransfer ? (
+          <p>-</p>
+        ) : (
+          ''
+        )}
         {transaction.transactionTransfer && transaction.id === transaction.transactionTransfer.originTransactionId && (
           <p className="flex items-center gap-1">
             <span className="text-xs font-light text-muted-foreground">To</span>
@@ -81,7 +93,9 @@ function TransactionRow({ transaction, user, showMainCurrencyAmount }: Transacti
             </div>
           </AvatarFallback>
         </Avatar>
-        <p>{transaction.financialAccount.name}</p>
+        <p>
+          <HighlightedText text={transaction.financialAccount.name} highlight={highlight} />
+        </p>
       </div>
       <div className="text-right">
         <p className="flex items-center justify-end gap-1 font-bold">

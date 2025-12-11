@@ -31,6 +31,12 @@ FROM
       )
       AND t.date >= $2::date
       AND t.date <= $3::date
+      AND (
+        $4::text IS NULL OR $4 = ''
+        OR lower(t.description) LIKE lower('%' || $4 || '%')
+        OR lower(tc.name) LIKE lower('%' || $4 || '%')
+        OR lower(fa.name) LIKE lower('%' || $4 || '%')
+      )
     GROUP BY
       "transactionDate"
   ) AS groupedTransactions;

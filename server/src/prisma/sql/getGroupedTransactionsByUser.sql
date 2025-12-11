@@ -379,6 +379,12 @@ WHERE
   )
   AND t.date >= $2::date
   AND t.date <= $3::date
+  AND (
+    $5::text IS NULL OR $5 = ''
+    OR lower(t.description) LIKE lower('%' || $5 || '%')
+    OR lower(tc.name) LIKE lower('%' || $5 || '%')
+    OR lower(fa.name) LIKE lower('%' || $5 || '%')
+  )
 GROUP BY
   "transactionDate"
 ORDER BY

@@ -14,6 +14,10 @@ RUN corepack enable pnpm && pnpm i --frozen-lockfile
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Signal to Next.js that this build should target the standalone output.
+ENV STANDALONE_BUILD=true
+
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 

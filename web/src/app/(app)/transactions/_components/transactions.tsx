@@ -3,14 +3,16 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import { Input } from '@/components/ui/input';
 import Spinner from '@/components/ui/spinner';
 import { useAccounts } from '@/hooks/accounts';
 import { useCurrencies } from '@/hooks/currencies';
 import { useTransactionsByUserId, useTransactionTypes } from '@/hooks/transactions';
+import { useDebounce } from '@/hooks/use-debounce';
 import { EXPENSE_ID, INCOME_ID } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
 import { User } from '@/types/User';
-import { Info, Plus } from 'lucide-react';
+import { Info, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import AddTransactionDialog from '../_components/add-transaction-dialog';
 import TransactionChart from '../_components/transaction-chart';
@@ -28,12 +30,13 @@ interface TransactionsProps {
 }
 
 function Transactions({ user, currentMonth, startDate, endDate, page }: TransactionsProps) {
+  const [showMainCurrencyAmount, setShowMainCurrencyAmount] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { accountsRes } = useAccounts();
   const { currencies } = useCurrencies();
-  const { transactionsRes } = useTransactionsByUserId(user.id, startDate, endDate, page);
+  const { transactionsRes } = useTransactionsByUserId(user.id, startDate, endDate, page, debouncedSearchTerm);
   const { transactionTypes } = useTransactionTypes();
-
-  const [showMainCurrencyAmount, setShowMainCurrencyAmount] = useState(false);
 
   user.mainCurrency = currencies && currencies.find((currency) => currency.id === user.mainCurrencyId);
   const isLoading = !accountsRes || !currencies || !transactionsRes || !transactionTypes;
@@ -109,27 +112,44 @@ function Transactions({ user, currentMonth, startDate, endDate, page }: Transact
             />
           </div>
           <Card className="xl:col-span-2" x-chunk="dashboard-01-chunk-4">
-            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="grid gap-2">
-                <CardTitle>History</CardTitle>
-                <CardDescription>Browse and manage your transactions.</CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch checked={showMainCurrencyAmount} onCheckedChange={setShowMainCurrencyAmount} />
-                <div className="flex items-center gap-1">
-                  <p className="text-sm text-muted-foreground">Show amounts in {user.mainCurrency?.code}</p>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-44 text-xs text-muted-foreground md:max-w-sm">
-                        Display transaction amounts in your main currency, calculated with the latest daily exchange
-                        rates (also used for chart data).
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
+            <CardHeader className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div className="grid gap-2">
+                  <CardTitle>History</CardTitle>
+                  <CardDescription>Browse and manage your transactions.</CardDescription>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={showMainCurrencyAmount} onCheckedChange={setShowMainCurrencyAmount} />
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground">Show amounts in {user.mainCurrency?.code}</p>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-44 text-xs text-muted-foreground md:max-w-sm">
+                          Display transaction amounts in your main currency, calculated with the latest daily exchange
+                          rates (also used for chart data).
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search transactions"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.currentTarget.value)}
+                  className="flex-1 border-none bg-transparent px-0 focus-visible:ring-0"
+                />
+                {searchTerm && (
+                  <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => setSearchTerm('')}>
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Clear search</span>
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -140,6 +160,7 @@ function Transactions({ user, currentMonth, startDate, endDate, page }: Transact
                 currencies={currencies}
                 user={user}
                 showMainCurrencyAmount={showMainCurrencyAmount}
+                searchTerm={debouncedSearchTerm.trim()}
               ></TransactionList>
             </CardContent>
           </Card>
