@@ -27,7 +27,7 @@ export function formatCurrency(number: number, minimumFractionDigits?: number, m
 export function formatCurrencyInput(str: string) {
   const cleanStr = str.replace(/,/g, '');
   const float = parseFloat(cleanStr);
-  return float.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return float.toLocaleString('en-US', { maximumFractionDigits: 4 });
 }
 
 export function parseCurrencyInput(str: string) {
@@ -81,7 +81,7 @@ export function parseDateParam(period: string) {
 export function cleanNumberInput(input: string, decimalPlaces: number) {
   const cleanNumber = input.replace(/,/g, '');
   const roundedNumber = parseFloat(cleanNumber).toFixed(decimalPlaces);
-  const formattedNumber = parseFloat(roundedNumber).toLocaleString(undefined, {
+  const formattedNumber = parseFloat(roundedNumber).toLocaleString('en-US', {
     maximumFractionDigits: decimalPlaces,
   });
   return formattedNumber;

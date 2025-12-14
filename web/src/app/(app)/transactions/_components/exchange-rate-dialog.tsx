@@ -134,7 +134,7 @@ function ExchangeRateDialog({
     if (value != '') {
       const cleanNumber = value.replace(/,/g, '');
       const roundedNumber = parseFloat(cleanNumber).toFixed(8);
-      const formattedNumber = parseFloat(roundedNumber).toLocaleString(undefined, { maximumFractionDigits: 8 });
+      const formattedNumber = parseFloat(roundedNumber).toLocaleString('en-US', { maximumFractionDigits: 8 });
 
       if (name == 'baseRate') {
         setBaseRate(formattedNumber);
