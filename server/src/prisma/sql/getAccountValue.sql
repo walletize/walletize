@@ -9,4 +9,5 @@ FROM
   transactions t
   JOIN financial_accounts fa ON t.account_id = fa.id
 WHERE
-  t.account_id = $1;
+  t.account_id = $1
+  AND t.date <= COALESCE($2::date, CURRENT_DATE);

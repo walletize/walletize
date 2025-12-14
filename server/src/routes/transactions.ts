@@ -336,7 +336,12 @@ router.post('/update', validateData(createUpdateTransactionSchema), async (req, 
       return res.status(403).json({ message: 'forbidden' });
     }
 
-    const result = await prisma.$queryRaw<{ sum: number | bigint | null }[]>(getAccountValue(accountId));
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'invalid_format' });
+    }
+
+    const result = await prisma.$queryRaw<{ sum: number | bigint | null }[]>(getAccountValue(accountId, parsedDate));
     const sum = BigInt(Math.round(Number(result[0].sum ?? 0)));
 
     await prisma.transaction.create({

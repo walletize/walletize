@@ -62,11 +62,14 @@ const queries = {
   getTransactionsSumByCategory: loadQuery('getTransactionsSumByCategory.sql'),
 } as const;
 
-export const getAccount = (accountId: string) => buildSql(queries.getAccount, [accountId]);
+export const getAccount = (accountId: string, endDate?: Date | null) =>
+  buildSql(queries.getAccount, [accountId, endDate ?? null]);
 
-export const getAccountValue = (accountId: string) => buildSql(queries.getAccountValue, [accountId]);
+export const getAccountValue = (accountId: string, endDate?: Date | null) =>
+  buildSql(queries.getAccountValue, [accountId, endDate ?? null]);
 
-export const getAccounts = (userId: string) => buildSql(queries.getAccounts, [userId]);
+export const getAccounts = (userId: string, endDate?: Date | null) =>
+  buildSql(queries.getAccounts, [userId, endDate ?? null]);
 
 export const getChartDataByAccount = (
   startDate: Date,

@@ -78,6 +78,7 @@ SELECT
       transactions t
     WHERE
       t.account_id = fa.id
+      AND t.date <= COALESCE($2::date, CURRENT_DATE)
   ) AS "currentValue",
   (
     SELECT
@@ -133,7 +134,7 @@ FROM
   JOIN users u ON fa.user_id = u.id
   JOIN currencies fc ON fa.currency_id = fc.id
 WHERE
-  fa.user_id = $1
+  (fa.user_id = $1
   OR EXISTS (
     SELECT
       1
@@ -143,7 +144,7 @@ WHERE
       account_id = fa.id
       AND user_id = $1
       AND status = 'ACCEPTED'
-  )
+  ))
 GROUP BY
   fa.id,
   ac.id,

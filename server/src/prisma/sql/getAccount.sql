@@ -86,6 +86,7 @@ SELECT
       transactions t
     WHERE
       t.account_id = fa.id
+      AND t.date <= COALESCE($2::date, CURRENT_DATE)
   ) AS "currentValue",
   (
     SELECT

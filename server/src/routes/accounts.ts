@@ -280,8 +280,14 @@ router.get('/user', async (req, res) => {
   try {
     const localUser = res.locals.user as User;
     const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string | undefined;
 
-    const rawAccounts = await prisma.$queryRaw(getAccounts(localUser.id));
+    const parsedEndDate = endDate ? new Date(endDate) : new Date();
+    if (isNaN(parsedEndDate.getTime())) {
+      return res.status(400).json({ message: 'invalid_format' });
+    }
+
+    const rawAccounts = await prisma.$queryRaw(getAccounts(localUser.id, parsedEndDate));
     const accounts = JSON.parse(
       JSON.stringify(rawAccounts, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );
@@ -343,6 +349,12 @@ router.get('/:accountId', async (req, res) => {
   try {
     const localUser = res.locals.user as User;
     const accountId = req.params.accountId;
+    const endDate = req.query.endDate as string | undefined;
+
+    const parsedEndDate = endDate ? new Date(endDate) : new Date();
+    if (isNaN(parsedEndDate.getTime())) {
+      return res.status(400).json({ message: 'invalid_format' });
+    }
 
     const accountData = await prisma.financialAccount.findUnique({
       include: {
@@ -364,7 +376,7 @@ router.get('/:accountId', async (req, res) => {
       return res.status(403).json({ message: 'forbidden' });
     }
 
-    const rawAccount = await prisma.$queryRaw<Record<string, unknown>[]>(getAccount(accountId));
+    const rawAccount = await prisma.$queryRaw<Record<string, unknown>[]>(getAccount(accountId, parsedEndDate));
     const account = JSON.parse(
       JSON.stringify(rawAccount[0], (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
     );
