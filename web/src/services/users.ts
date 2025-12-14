@@ -1,4 +1,4 @@
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl } from '@/lib/api';
 
 export async function updateMainCurrency(currencyId: string) {
   const res = await fetch(getApiUrl() + `/users/currency/${currencyId}`, {

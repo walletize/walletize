@@ -9,6 +9,7 @@ The open-source personal finance app that's simple and modern.
 Walletize is a web application designed to help individuals efficiently manage their personal finances. Track your income, expenses, assets, and liabilities while getting comprehensive insights into your net worth and overall financial health.
 
 Key features:
+
 - Multi-currency support
 - Shared financial accounts
 - Cross-device synchronization
@@ -38,12 +39,14 @@ Set up [Walletize/server](https://github.com/Walletize/server) by following the 
 Once you have the server running, you can proceed with setting up the web application:
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/Walletize/web.git walletize-web
    cd walletize-web
    ```
 
 2. Create a `.env` file in the root directory with the following variables, and adjust them accordingly (or copy `.env.example`):
+
    ```bash
    NEXT_PUBLIC_WEB_URL="http://<YOUR_IP_ADDRESS>:3101"
    NEXT_PUBLIC_API_URL="http://<YOUR_IP_ADDRESS>:3100"
@@ -51,6 +54,7 @@ Once you have the server running, you can proceed with setting up the web applic
    ```
 
 3. Build and run the Docker container:
+
    ```bash
    docker build -t walletize-web .
    docker run -d -p 3101:3101 --name walletize-web walletize-web

@@ -45,8 +45,7 @@ function TransactionList({
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   const flatTransactions = useMemo(
-    () =>
-      transactionsRes.groupedTransactions.flatMap((groupedTransaction) => groupedTransaction.transactions ?? []),
+    () => transactionsRes.groupedTransactions.flatMap((groupedTransaction) => groupedTransaction.transactions ?? []),
     [transactionsRes.groupedTransactions],
   );
 

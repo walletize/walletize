@@ -1,4 +1,4 @@
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl } from '@/lib/api';
 
 export async function signUp(name: string, email: string, password: string) {
   const res = await fetch(getApiUrl() + '/auth/signup', {

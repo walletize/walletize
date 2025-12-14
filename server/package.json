@@ -11,16 +11,10 @@
     "dev": "tsx watch src/app.ts NODE_ENV=development",
     "build": "pnpm exec tsc",
     "start": "node dist/app.js",
-    "prepare": "husky",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "migrate:reset": "pnpm exec prisma migrate reset",
     "seed": "pnpm exec prisma db seed"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,scss,md}": [
@@ -41,7 +35,6 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "express": "^4.19.2",
-    "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "lucia": "^3.2.0",
     "node-cron": "^3.0.3",

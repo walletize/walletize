@@ -28,8 +28,7 @@ function AccountList({ accounts, typeId }: AccountListProps) {
 
   useEffect(() => {
     if (selectAllRef.current) {
-      selectAllRef.current.indeterminate =
-        selectedAccountIds.size > 0 && selectedAccountIds.size < accounts.length;
+      selectAllRef.current.indeterminate = selectedAccountIds.size > 0 && selectedAccountIds.size < accounts.length;
     }
   }, [accounts.length, selectedAccountIds.size]);
 

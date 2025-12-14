@@ -38,7 +38,7 @@ function AccountRow({ account, selectable, selected, onSelectChange, disabled }:
         />
       )}
       <div className="grid w-full grid-cols-[1fr_auto] items-center gap-2 overflow-hidden rounded-lg px-2 py-2 md:grid-cols-5 md:px-4 md:py-3">
-        <div className="md:col-span-2 flex items-center gap-4">
+        <div className="flex items-center gap-4 md:col-span-2">
           <Avatar className="flex h-9 w-9 items-center justify-center">
             <AvatarFallback style={{ backgroundColor: account.color }}>
               <div className="flex h-5 w-5 items-center justify-center">
@@ -70,8 +70,7 @@ function AccountRow({ account, selectable, selected, onSelectChange, disabled }:
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">
-                {account.user.name || account.user.email}{' '}
-                <span className="text-xs text-muted-foreground">(owner)</span>
+                {account.user.name || account.user.email} <span className="text-xs text-muted-foreground">(owner)</span>
               </p>
             </TooltipContent>
           </TooltipComponent>
@@ -105,7 +104,7 @@ function AccountRow({ account, selectable, selected, onSelectChange, disabled }:
           ))}
         </div>
         <div className="text-right">
-          <p className="flex items-center justify-end gap-1 font-bold whitespace-nowrap">
+          <p className="flex items-center justify-end gap-1 whitespace-nowrap font-bold">
             <span className="text-xs text-muted-foreground">
               {mainAmount < 0 ? '-' : ''}
               {account.currency.symbol}

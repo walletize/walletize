@@ -30,4 +30,3 @@ export function HighlightedText({ text, highlight }: HighlightedTextProps) {
     </>
   );
 }
-

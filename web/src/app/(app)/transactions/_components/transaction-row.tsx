@@ -126,7 +126,7 @@ function TransactionRow({
           </p>
         </div>
         <div className="text-right">
-          <p className="flex items-center justify-end gap-1 font-bold whitespace-nowrap">
+          <p className="flex items-center justify-end gap-1 whitespace-nowrap font-bold">
             <span className="text-xs text-muted-foreground">
               {mainAmount > 0 ? '+' : mainAmount < 0 ? '-' : ''}
               {showMainCurrencyAmount ? user.mainCurrency?.symbol : transaction.financialAccount.currency.symbol}
