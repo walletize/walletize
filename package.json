@@ -1,0 +1,16 @@
+{
+  "name": "walletize",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Walletize monorepo",
+  "author": "Justin Jap",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@8.14.3",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.6"
+  }
+}
+
