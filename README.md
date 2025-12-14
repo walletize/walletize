@@ -1,4 +1,4 @@
-![Walletize](server/hero-light.avif)
+![Walletize](hero-dark.avif)
 
 # Walletize
 

@@ -6,6 +6,7 @@ import { ASSET_ID, LIABILITY_ID } from '../lib/constants.js';
 import { validateData } from '../lib/midddleware.js';
 import {
   accountCategorySchema,
+  bulkDeleteAccountsSchema,
   createAccountInviteSchema,
   createAccountSchema,
   updateAccountSchema,
@@ -401,6 +402,74 @@ router.put('/:accountId', validateData(updateAccountSchema), async (req, res) =>
     });
 
     return res.status(200).json({ message: 'success' });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'internal_error' });
+  }
+});
+
+router.delete('/', validateData(bulkDeleteAccountsSchema), async (req, res) => {
+  try {
+    const localUser = res.locals.user as User;
+    const ids: string[] = req.body.ids;
+    const results: { id: string; status: 'deleted' | 'failed'; reason?: string }[] = [];
+
+    const uniqueIds = [...new Set(ids)];
+    const seenIds = new Set<string>();
+
+    const accounts = await prisma.financialAccount.findMany({
+      where: {
+        id: { in: uniqueIds },
+      },
+    });
+
+    const accountsById = new Map(accounts.map((acc) => [acc.id, acc]));
+
+    const deletableIds: string[] = [];
+
+    for (const id of ids) {
+      if (seenIds.has(id)) {
+        continue;
+      }
+      seenIds.add(id);
+
+      const account = accountsById.get(id);
+      if (!account) {
+        results.push({ id, status: 'failed', reason: 'not_found' });
+      } else if (account.userId !== localUser.id) {
+        results.push({ id, status: 'failed', reason: 'forbidden' });
+      } else {
+        deletableIds.push(id);
+      }
+    }
+
+    if (deletableIds.length > 0) {
+      try {
+        await prisma.financialAccount.deleteMany({
+          where: {
+            id: { in: deletableIds },
+          },
+        });
+
+        for (const id of deletableIds) {
+          results.push({ id, status: 'deleted' });
+        }
+      } catch (e) {
+        console.error(e);
+        for (const id of deletableIds) {
+          results.push({ id, status: 'failed', reason: 'internal_error' });
+        }
+      }
+    }
+
+    const failed = results.filter((result) => result.status === 'failed');
+    const deleted = results.filter((result) => result.status === 'deleted').length;
+    const statusCode = failed.length > 0 && deleted > 0 ? 207 : failed.length > 0 ? 400 : 200;
+    return res.status(statusCode).json({
+      message: failed.length > 0 ? (deleted > 0 ? 'partial_success' : 'failure') : 'success',
+      deleted,
+      failed,
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: 'internal_error' });

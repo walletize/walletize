@@ -227,6 +227,23 @@ export async function deleteTransaction(transaction: Transaction, recurringDelet
   return { ok: res.ok, message: body.message };
 }
 
+export async function deleteTransactionsBulk(transactionIds: string[]) {
+  const res = await fetch(getApiUrl() + '/transactions', {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3101',
+    },
+    body: JSON.stringify({
+      ids: transactionIds,
+    }),
+  });
+
+  const body = await res.json();
+  return { ok: res.ok, message: body.message, deleted: body.deleted, failed: body.failed };
+}
+
 export async function addTransactionCategory(
   formData: FormData,
   typeId: string,

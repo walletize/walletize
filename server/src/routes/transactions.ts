@@ -24,6 +24,7 @@ import { prisma } from '../app.js';
 import { EXPENSE_ID, INCOME_ID, INCOMING_TRANSFER_ID, OUTGOING_TRANSFER_ID } from '../lib/constants.js';
 import { validateData } from '../lib/midddleware.js';
 import {
+  bulkDeleteTransactionsSchema,
   createTransactionExpenseIncomeSchema,
   createTransactionTransferSchema,
   createUpdateTransactionSchema,
@@ -55,9 +56,7 @@ router.post('/', validateData(createTransactionExpenseIncomeSchema), async (req,
       where: {
         userId: localUser.id,
         status: InviteStatus.ACCEPTED,
-        financialAccount: {
-          userId: account?.userId,
-        },
+        accountId: account?.id,
       },
     });
     if (localUser.id !== account?.userId && !acceptedInvite) {
@@ -216,18 +215,14 @@ router.post('/transfer', validateData(createTransactionTransferSchema), async (r
         where: {
           userId: localUser.id,
           status: InviteStatus.ACCEPTED,
-          financialAccount: {
-            userId: originAccount?.userId,
-          },
+          accountId: originAccount?.id,
         },
       });
       const destinationAcceptedInvite = await prisma.accountInvite.findFirst({
         where: {
           userId: localUser.id,
           status: InviteStatus.ACCEPTED,
-          financialAccount: {
-            userId: destinationAccount?.userId,
-          },
+          accountId: destinationAccount?.id,
         },
       });
       const hasOriginAccess = localUser.id === originAccount?.userId || originAcceptedInvite !== null;
@@ -280,9 +275,7 @@ router.post('/transfer', validateData(createTransactionTransferSchema), async (r
         where: {
           userId: localUser.id,
           status: InviteStatus.ACCEPTED,
-          financialAccount: {
-            userId: account.userId,
-          },
+          accountId: account.id,
         },
       });
       const hasAccess = localUser.id === account.userId || acceptedInvite !== null;
@@ -336,9 +329,7 @@ router.post('/update', validateData(createUpdateTransactionSchema), async (req, 
       where: {
         userId: localUser.id,
         status: InviteStatus.ACCEPTED,
-        financialAccount: {
-          userId: account?.userId,
-        },
+        accountId: account?.id,
       },
     });
     if (localUser.id !== account?.userId && !acceptedInvite) {
@@ -769,9 +760,7 @@ router.put('/:transactionId', validateData(updateTransactionSchema), async (req,
       where: {
         userId: localUser.id,
         status: InviteStatus.ACCEPTED,
-        financialAccount: {
-          userId: account?.userId,
-        },
+        accountId: account?.id,
       },
     });
     if (localUser.id !== account?.userId && !acceptedInvite) {
@@ -848,6 +837,256 @@ router.put('/:transactionId', validateData(updateTransactionSchema), async (req,
   }
 });
 
+router.delete('/', validateData(bulkDeleteTransactionsSchema), async (req, res) => {
+  try {
+    const localUser = res.locals.user as User;
+    const ids: string[] = req.body.ids;
+    const results: { id: string; status: 'deleted' | 'failed'; reason?: string }[] = [];
+
+    const uniqueIds = [...new Set(ids)];
+    const seenIds = new Set<string>();
+    const idsSet = new Set(ids);
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        id: { in: uniqueIds },
+      },
+      include: {
+        financialAccount: true,
+        destinationTransactionTransfer: true,
+        originTransactionTransfer: true,
+      },
+    });
+
+    const transactionsById = new Map(transactions.map((t) => [t.id, t]));
+
+    const accountIds = new Set<string>();
+    const linkedTransactionIds = new Set<string>();
+    transactions.forEach((t) => {
+      if (t.financialAccount?.id) {
+        accountIds.add(t.financialAccount.id);
+      }
+      if (t.originTransactionTransfer?.destinationTransactionId) {
+        linkedTransactionIds.add(t.originTransactionTransfer.destinationTransactionId);
+      }
+      if (t.destinationTransactionTransfer?.originTransactionId) {
+        linkedTransactionIds.add(t.destinationTransactionTransfer.originTransactionId);
+      }
+    });
+
+    const linkedIdsToFetch = Array.from(linkedTransactionIds).filter((id) => !transactionsById.has(id));
+    if (linkedIdsToFetch.length > 0) {
+      const linkedTransactions = await prisma.transaction.findMany({
+        where: {
+          id: { in: linkedIdsToFetch },
+        },
+        include: {
+          financialAccount: true,
+          destinationTransactionTransfer: true,
+          originTransactionTransfer: true,
+        },
+      });
+      linkedTransactions.forEach((t) => {
+        transactionsById.set(t.id, t);
+        if (t.financialAccount?.id) {
+          accountIds.add(t.financialAccount.id);
+        }
+      });
+    }
+
+    const accountInvites = await prisma.accountInvite.findMany({
+      where: {
+        userId: localUser.id,
+        status: InviteStatus.ACCEPTED,
+        accountId: { in: Array.from(accountIds) },
+      },
+    });
+
+    const invitedAccountIds = new Set(accountInvites.map((invite) => invite.accountId));
+
+    const deletableTransactions: {
+      id: string;
+      transaction: (typeof transactions)[0];
+      linkedTransactionId?: string;
+      transferId?: string;
+      isOrigin?: boolean;
+    }[] = [];
+    const linkedTransactionIdsToDelete = new Set<string>();
+    const transferIdsToDelete = new Set<string>();
+
+    for (const id of ids) {
+      if (seenIds.has(id)) {
+        continue;
+      }
+      seenIds.add(id);
+
+      const transaction = transactionsById.get(id);
+      if (!transaction) {
+        results.push({ id, status: 'failed', reason: 'not_found' });
+        continue;
+      }
+
+      const account = transaction.financialAccount;
+      const hasAccess = localUser.id === account?.userId || (account?.id && invitedAccountIds.has(account.id));
+
+      if (!hasAccess) {
+        results.push({ id, status: 'failed', reason: 'forbidden' });
+        continue;
+      }
+
+      if (transaction.originTransactionTransfer) {
+        const transfer = transaction.originTransactionTransfer;
+        if (transfer.destinationTransactionId) {
+          const linkedTransaction = transactionsById.get(transfer.destinationTransactionId);
+          if (linkedTransaction && linkedTransaction.financialAccount) {
+            const linkedAccount = linkedTransaction.financialAccount;
+            const hasLinkedAccess =
+              localUser.id === linkedAccount.userId || (linkedAccount.id && invitedAccountIds.has(linkedAccount.id));
+
+            if (!hasLinkedAccess) {
+              results.push({ id, status: 'failed', reason: 'forbidden' });
+              continue;
+            }
+
+            transferIdsToDelete.add(transfer.id);
+            linkedTransactionIdsToDelete.add(transfer.destinationTransactionId);
+            deletableTransactions.push({
+              id,
+              transaction,
+              linkedTransactionId: transfer.destinationTransactionId,
+              transferId: transfer.id,
+              isOrigin: true,
+            });
+          } else {
+            transferIdsToDelete.add(transfer.id);
+            deletableTransactions.push({
+              id,
+              transaction,
+              transferId: transfer.id,
+              isOrigin: true,
+            });
+          }
+        } else {
+          transferIdsToDelete.add(transfer.id);
+          deletableTransactions.push({
+            id,
+            transaction,
+            transferId: transfer.id,
+            isOrigin: true,
+          });
+        }
+      } else if (transaction.destinationTransactionTransfer) {
+        const transfer = transaction.destinationTransactionTransfer;
+        if (transfer.originTransactionId) {
+          const linkedTransaction = transactionsById.get(transfer.originTransactionId);
+          if (linkedTransaction && linkedTransaction.financialAccount) {
+            const linkedAccount = linkedTransaction.financialAccount;
+            const hasLinkedAccess =
+              localUser.id === linkedAccount.userId || (linkedAccount.id && invitedAccountIds.has(linkedAccount.id));
+
+            if (!hasLinkedAccess) {
+              results.push({ id, status: 'failed', reason: 'forbidden' });
+              continue;
+            }
+
+            transferIdsToDelete.add(transfer.id);
+            linkedTransactionIdsToDelete.add(transfer.originTransactionId);
+            deletableTransactions.push({
+              id,
+              transaction,
+              linkedTransactionId: transfer.originTransactionId,
+              transferId: transfer.id,
+              isOrigin: false,
+            });
+          } else {
+            transferIdsToDelete.add(transfer.id);
+            deletableTransactions.push({
+              id,
+              transaction,
+              transferId: transfer.id,
+              isOrigin: false,
+            });
+          }
+        } else {
+          transferIdsToDelete.add(transfer.id);
+          deletableTransactions.push({
+            id,
+            transaction,
+            transferId: transfer.id,
+            isOrigin: false,
+          });
+        }
+      } else {
+        deletableTransactions.push({
+          id,
+          transaction,
+        });
+      }
+    }
+
+    try {
+      if (transferIdsToDelete.size > 0) {
+        await prisma.transactionTransfer.deleteMany({
+          where: {
+            id: { in: Array.from(transferIdsToDelete) },
+          },
+        });
+      }
+
+      if (linkedTransactionIdsToDelete.size > 0) {
+        await prisma.transaction.deleteMany({
+          where: {
+            id: { in: Array.from(linkedTransactionIdsToDelete) },
+          },
+        });
+
+        for (const linkedId of linkedTransactionIdsToDelete) {
+          if (!idsSet.has(linkedId)) {
+            results.push({ id: linkedId, status: 'deleted' });
+          }
+        }
+      }
+
+      const mainTransactionIds = deletableTransactions.map((dt) => dt.id);
+      if (mainTransactionIds.length > 0) {
+        await prisma.transaction.deleteMany({
+          where: {
+            id: { in: mainTransactionIds },
+          },
+        });
+
+        for (const dt of deletableTransactions) {
+          results.push({ id: dt.id, status: 'deleted' });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      for (const dt of deletableTransactions) {
+        if (!results.some((r) => r.id === dt.id)) {
+          results.push({ id: dt.id, status: 'failed', reason: 'internal_error' });
+        }
+      }
+      for (const linkedId of linkedTransactionIdsToDelete) {
+        if (idsSet.has(linkedId) && !results.some((r) => r.id === linkedId)) {
+          results.push({ id: linkedId, status: 'failed', reason: 'internal_error' });
+        }
+      }
+    }
+
+    const failed = results.filter((result) => result.status === 'failed');
+    const deleted = results.filter((result) => result.status === 'deleted').length;
+    const statusCode = failed.length > 0 && deleted > 0 ? 207 : failed.length > 0 ? 400 : 200;
+    return res.status(statusCode).json({
+      message: failed.length > 0 ? (deleted > 0 ? 'partial_success' : 'failure') : 'success',
+      deleted,
+      failed,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'internal_error' });
+  }
+});
+
 router.delete('/:transactionId', validateData(deleteTransactionSchema), async (req, res) => {
   try {
     const localUser = res.locals.user as User;
@@ -877,9 +1116,7 @@ router.delete('/:transactionId', validateData(deleteTransactionSchema), async (r
       where: {
         userId: localUser.id,
         status: InviteStatus.ACCEPTED,
-        financialAccount: {
-          userId: account?.userId,
-        },
+        accountId: account?.id,
       },
     });
     if (localUser.id !== account?.userId && !acceptedInvite) {

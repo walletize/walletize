@@ -35,6 +35,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - walletize-network
     restart: unless-stopped
@@ -52,7 +58,8 @@ services:
     ports:
       - "3101:3101"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     networks:
       - walletize-network
     restart: unless-stopped

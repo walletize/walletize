@@ -10,18 +10,35 @@ import { Tooltip as TooltipComponent, TooltipContent, TooltipTrigger } from '@/c
 
 interface AccountRowProps {
   account: FinancialAccount;
+  selectable?: boolean;
+  selected?: boolean;
+  disabled?: boolean;
+  onSelectChange?: (checked: boolean) => void;
 }
 
-function AccountRow({ account }: AccountRowProps) {
+function AccountRow({ account, selectable, selected, onSelectChange, disabled }: AccountRowProps) {
   const mainAmount = account.currentValue;
 
-  return (
-    <Link href={'/accounts/' + account.id}>
-      <div
-        key={account.id}
-        className="grid grid-cols-3 items-center gap-2 overflow-hidden rounded-lg px-4 py-3 text-left text-sm font-medium transition-colors hover:cursor-pointer hover:bg-muted md:grid-cols-5"
-      >
-        <div className="col-span-2 flex items-center gap-4">
+  const rowContent = (
+    <div
+      key={account.id}
+      className={cn(
+        'flex items-center gap-2 rounded-lg px-2 py-1 text-left text-sm font-medium transition-colors hover:cursor-pointer',
+        selected ? 'bg-muted' : 'hover:bg-muted',
+      )}
+    >
+      {selectable && (
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={selected}
+          disabled={disabled}
+          onChange={(event) => onSelectChange?.(event.target.checked)}
+          onClick={(event) => event.stopPropagation()}
+        />
+      )}
+      <div className="grid w-full grid-cols-[1fr_auto] items-center gap-2 overflow-hidden rounded-lg px-2 py-2 md:grid-cols-5 md:px-4 md:py-3">
+        <div className="md:col-span-2 flex items-center gap-4">
           <Avatar className="flex h-9 w-9 items-center justify-center">
             <AvatarFallback style={{ backgroundColor: account.color }}>
               <div className="flex h-5 w-5 items-center justify-center">
@@ -53,7 +70,8 @@ function AccountRow({ account }: AccountRowProps) {
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">
-                {account.user.name || account.user.email} <span className="text-xs text-muted-foreground">(owner)</span>
+                {account.user.name || account.user.email}{' '}
+                <span className="text-xs text-muted-foreground">(owner)</span>
               </p>
             </TooltipContent>
           </TooltipComponent>
@@ -87,7 +105,7 @@ function AccountRow({ account }: AccountRowProps) {
           ))}
         </div>
         <div className="text-right">
-          <p className="flex items-center justify-end gap-1 font-bold">
+          <p className="flex items-center justify-end gap-1 font-bold whitespace-nowrap">
             <span className="text-xs text-muted-foreground">
               {mainAmount < 0 ? '-' : ''}
               {account.currency.symbol}
@@ -98,6 +116,12 @@ function AccountRow({ account }: AccountRowProps) {
           </p>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <Link href={'/accounts/' + account.id} onClick={(event) => event.stopPropagation()}>
+      {rowContent}
     </Link>
   );
 }

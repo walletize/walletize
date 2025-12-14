@@ -39,3 +39,9 @@ export const accountCategorySchema = z
     typeId: z.string().uuid(),
   })
   .strict();
+
+export const bulkDeleteAccountsSchema = z
+  .object({
+    ids: z.array(z.string().uuid()).min(1).max(100),
+  })
+  .strict();

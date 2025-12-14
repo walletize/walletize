@@ -76,6 +76,12 @@ export const deleteTransactionSchema = z
   })
   .strict();
 
+export const bulkDeleteTransactionsSchema = z
+  .object({
+    ids: z.array(z.string().uuid()).min(1).max(100),
+  })
+  .strict();
+
 export const transactionCategorySchema = z
   .object({
     name: z.string().min(1),
